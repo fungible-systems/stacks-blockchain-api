@@ -4537,15 +4537,6 @@ export class PgDataStore
         tx.microblock_canonical,
       ]
     );
-
-    await client.query(
-      `
-      UPDATE txs
-      SET abi = $2
-      WHERE tx_id = $1
-      `,
-      [hexToBuffer(smartContract.tx_id), smartContract.abi]
-    );
   }
 
   async getSmartContractList(contractIds: string[]) {
