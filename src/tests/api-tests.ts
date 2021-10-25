@@ -4600,6 +4600,37 @@ describe('api tests', () => {
     const searchResult = await supertest(api.server).get(`/extended/v1/tx/0x1234/raw`);
     expect(searchResult.status).toBe(404);
   });
+
+  test('exclusive address endpoints params', async () => {
+    const addressEndpoints = [
+      '/stx',
+      '/balances',
+      '/transactions',
+      '/transactions_with_transfers',
+      '/assets',
+      '/stx_inbound',
+      '/nft_events',
+    ];
+
+    //check for mutually exclusive unachored and and at_block
+    for (const path of addressEndpoints) {
+      const response = await supertest(api.server).get(
+        `/extended/v1/address/STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6${path}?at_block=5&unanchored=true`
+      );
+      expect(response.status).toBe(400);
+    }
+
+    const addressEndpoints1 = ['/transactions', '/transactions_with_transfers', '/stx_inbound'];
+
+    /// check for mutually exclusive at_block adn height params
+    for (const path of addressEndpoints1) {
+      const response1 = await supertest(api.server).get(
+        `/extended/v1/address/STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6${path}?at_block=5&height=0`
+      );
+      expect(response1.status).toBe(400);
+    }
+  });
+
   test('Success: nft events for address', async () => {
     const dbBlock: DbBlock = {
       block_hash: '0xff',
