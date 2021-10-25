@@ -263,7 +263,7 @@ async function sendCoreTx(
   return Promise.resolve({ txId: '' });
 }
 
-export function getStacksTestnetNetwork() {
+function getStacksTestnetNetwork() {
   const stacksNetwork = new StacksTestnet();
   stacksNetwork.coreApiUrl = getCoreNodeEndpoint({
     host: `http://${HOST}`,

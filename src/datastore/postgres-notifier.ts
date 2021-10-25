@@ -34,7 +34,7 @@ export type PgTokensNotificationPayload = {
   contractID: string;
 };
 
-export type PgNotificationPayload =
+type PgNotificationPayload =
   | PgBlockNotificationPayload
   | PgMicroblockNotificationPayload
   | PgTxNotificationPayload
@@ -43,12 +43,12 @@ export type PgNotificationPayload =
   | PgNameNotificationPayload
   | PgTokensNotificationPayload;
 
-export type PgNotification = {
+type PgNotification = {
   type: string;
   payload: PgNotificationPayload;
 };
 
-export type PgNotificationCallback = (notification: PgNotification) => void;
+type PgNotificationCallback = (notification: PgNotification) => void;
 
 /**
  * Creates and connects to a channel between the API and the Postgres DB to receive table update notifications
