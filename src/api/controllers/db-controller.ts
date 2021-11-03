@@ -571,17 +571,17 @@ interface GetTxFromDbTxArgs extends GetTxArgs {
   dbTx: DbTx;
 }
 
-export interface GetTxsWithEventsArgs extends GetTxsArgs {
+interface GetTxsWithEventsArgs extends GetTxsArgs {
   eventLimit: number;
   eventOffset: number;
 }
 
-export interface GetTxsArgs {
+interface GetTxsArgs {
   txIds: string[];
   includeUnanchored: boolean;
 }
 
-export interface GetTxWithEventsArgs extends GetTxArgs {
+interface GetTxWithEventsArgs extends GetTxArgs {
   eventLimit: number;
   eventOffset: number;
 }
@@ -779,7 +779,7 @@ export function parseDbMempoolTx(dbMempoolTx: DbMempoolTx): MempoolTransaction {
   return result;
 }
 
-export async function getMempoolTxsFromDataStore(
+async function getMempoolTxsFromDataStore(
   db: DataStore,
   args: GetTxsArgs
 ): Promise<MempoolTransaction[]> {
@@ -810,7 +810,7 @@ export async function getMempoolTxsFromDataStore(
   return parsedMempoolTxs;
 }
 
-export async function getTxsFromDataStore(
+async function getTxsFromDataStore(
   db: DataStore,
   args: GetTxsArgs | GetTxsWithEventsArgs
 ): Promise<Transaction[]> {
