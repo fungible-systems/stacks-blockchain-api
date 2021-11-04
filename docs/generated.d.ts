@@ -669,7 +669,7 @@ export type BnsFetchHistoricalZoneFileResponse =
       [k: string]: unknown | undefined;
     };
 /**
- * Fetches the list of subdomain operations processed by a given transaction. The returned array includes subdomain operations that have not yet been accepted as part of any subdomain’s history (checkable via the accepted field). If the given transaction ID does not correspond to a Blockstack transaction that introduced new subdomain operations, and empty array will be returned.
+ * Fetches the list of subdomain operations processed by a given transaction. The returned array includes subdomain operations that have not yet been accepted as part of any subdomain’s history (checkable via the accepted field). If the given transaction ID does not correspond to a Stacks transaction that introduced new subdomain operations, and empty array will be returned.
  */
 export type BnsGetSubdomainAtTx = {
   accepted?: number;
@@ -1039,6 +1039,7 @@ export interface BaseTransaction {
   post_condition_mode: PostConditionMode;
   post_conditions: PostCondition[];
   anchor_mode: TransactionAnchorModeType;
+  abi?: string;
 }
 /**
  * Metadata associated with token-transfer type transactions
