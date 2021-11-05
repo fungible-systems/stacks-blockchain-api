@@ -15,7 +15,7 @@ function handleBadRequest(res: Response, next: NextFunction, errorMessage: strin
 export function isUnanchoredRequest(
   req: Request,
   res: Response,
-  next: NextFunction
+  next?: NextFunction
 ): boolean | never {
   const paramName = 'unanchored';
   if (!(paramName in req.query)) {
@@ -39,11 +39,15 @@ export function isUnanchoredRequest(
         return false;
     }
   }
-  handleBadRequest(
-    res,
-    next,
-    `Unexpected value for 'unanchored' parameter: ${JSON.stringify(paramVal)}`
-  );
+  if (next) {
+    handleBadRequest(
+      res,
+      next,
+      `Unexpected value for 'unanchored' parameter: ${JSON.stringify(paramVal)}`
+    );
+  } else {
+    return false;
+  }
 }
 
 /**
