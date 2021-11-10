@@ -11,8 +11,6 @@ ARG STACKS_BLOCKCHAIN_API_DIR=/stacks-blockchain-api
 ARG PG_DATA=/data/postgres
 ARG V2_POX_MIN_AMOUNT_USTX=90000000260
 
-#######################################################################
-## Build the stacks-blockchain-api
 FROM node:lts-buster as stacks-blockchain-api-build
 ARG STACKS_API_REPO
 ARG STACKS_API_VERSION
