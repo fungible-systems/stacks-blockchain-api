@@ -2,14 +2,17 @@ ARG STACKS_API_VERSION=v0.71.0
 ARG STACKS_NODE_VERSION=2.0.11.4.0
 ARG STACKS_API_REPO=blockstack/stacks-blockchain-api
 ARG STACKS_NODE_REPO=blockstack/stacks-blockchain
-ARG PG_VERSION=12
 ARG STACKS_NETWORK=mainnet
 ARG STACKS_LOG_DIR=/var/log/stacks-node
 ARG STACKS_SVC_DIR=/etc/service
 ARG STACKS_BLOCKCHAIN_DIR=/stacks-blockchain
 ARG STACKS_BLOCKCHAIN_API_DIR=/stacks-blockchain-api
-ARG PG_DATA=/data/postgres
 ARG V2_POX_MIN_AMOUNT_USTX=90000000260
+ARG PG_HOST=127.0.0.1
+ARG PG_PORT=5432
+ARG PG_USER=postgres
+ARG PG_PASSWORD=postgres
+ARG PG_DATABASE=postgres
 
 #######################################################################
 ## Build the stacks-blockchain-api
@@ -57,16 +60,17 @@ ARG STACKS_LOG_DIR
 ARG STACKS_SVC_DIR
 ARG STACKS_BLOCKCHAIN_DIR
 ARG STACKS_BLOCKCHAIN_API_DIR
-ARG PG_DATA
-ARG PG_VERSION
 ARG V2_POX_MIN_AMOUNT_USTX
-ENV PG_HOST=127.0.0.1
-ENV PG_PORT=5432
-ENV PG_USER=postgres
-ENV PG_PASSWORD=postgres
-ENV PG_DATABASE=postgres
-ENV PG_DATA=${PG_DATA}
-ENV PG_VERSION=${PG_VERSION}
+ARG PG_HOST
+ARG PG_PORT
+ARG PG_USER
+ARG PG_PASSWORD
+ARG PG_DATABASE
+ENV PG_HOST=${PG_HOST}
+ENV PG_PORT=${PG_PORT}
+ENV PG_USER=${PG_USER}
+ENV PG_PASSWORD=${PG_PASSWORD}
+ENV PG_DATABASE=${PG_DATABASE}
 ENV STACKS_SVC_DIR=${STACKS_SVC_DIR}
 ENV STACKS_BLOCKCHAIN_DIR=${STACKS_BLOCKCHAIN_DIR}
 ENV STACKS_BLOCKCHAIN_API_DIR=${STACKS_BLOCKCHAIN_API_DIR}
@@ -97,15 +101,12 @@ RUN curl -sL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - 
     && curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get update \
     && apt-get install -y \
-        postgresql-${PG_VERSION} \
         postgresql-client-${PG_VERSION} \
         nodejs \
     && echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN mkdir -p \
-        ${STACKS_SVC_DIR}/postgresql/log \
         ${STACKS_SVC_DIR}/stacks-blockchain-api/log \
         ${STACKS_SVC_DIR}/stacks-blockchain \
-        ${STACKS_LOG_DIR}/postgresql \
         ${STACKS_LOG_DIR}/stacks-blockchain-api/log \
         /root/stacks-node/data \
     && apt-get clean \
@@ -118,17 +119,11 @@ COPY stacks-blockchain/Stacks-mocknet.toml ${STACKS_BLOCKCHAIN_DIR}/Stacks-mockn
 
 ###################################
 ##  runit service files
-RUN printf '#!/bin/sh\nexec 2>&1\n[ ! -d %s ] && mkdir -p %s && chown -R postgres:postgres %s && gosu postgres /usr/lib/postgresql/%s/bin/pg_ctl init -D %s\nexec gosu postgres /usr/lib/postgresql/%s/bin/postmaster -D %s' ${PG_DATA} ${PG_DATA} ${PG_DATA} ${PG_VERSION} ${PG_DATA} ${PG_VERSION} ${PG_DATA} > ${STACKS_SVC_DIR}/postgresql/run \
-    && printf '#!/bin/sh\nrm -rf %s' ${PG_DATA} > ${STACKS_SVC_DIR}/postgresql/finish \
-    && printf '#!/bin/sh\nexec svlogd -tt %s/postgresql' ${STACKS_LOG_DIR} > ${STACKS_SVC_DIR}/postgresql/log/run \
-    && printf '#!/bin/sh\nexec 2>&1\ncase $STACKS_NETWORK in\n    testnet)\n        exec %s/stacks-node start --config=%s/Stacks-testnet.toml 2>&1\n        ;;\n    mocknet)\n        exec %s/stacks-node start --config=%s/Stacks-mocknet.toml 2>&1\n        ;;\n    *)\n        exec %s/stacks-node start --config=%s/Stacks-mainnet.toml 2>&1\n        ;;\nesac' ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} > ${STACKS_SVC_DIR}/stacks-blockchain/run \
+RUN printf '#!/bin/sh\nexec 2>&1\ncase $STACKS_NETWORK in\n    testnet)\n        exec %s/stacks-node start --config=%s/Stacks-testnet.toml 2>&1\n        ;;\n    mocknet)\n        exec %s/stacks-node start --config=%s/Stacks-mocknet.toml 2>&1\n        ;;\n    *)\n        exec %s/stacks-node start --config=%s/Stacks-mainnet.toml 2>&1\n        ;;\nesac' ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} ${STACKS_BLOCKCHAIN_DIR} > ${STACKS_SVC_DIR}/stacks-blockchain/run \
     && printf '#!/bin/sh\nexec 2>&1\ncase $STACKS_NETWORK in\n    testnet)\n        export STACKS_CHAIN_ID=${TESTNET_STACKS_CHAIN_ID}\n        ;;\n    mocknet)\n        export STACKS_CHAIN_ID=${MOCKNET_STACKS_CHAIN_ID}\n        ;;\n    *)\n        export STACKS_CHAIN_ID=${MAINNET_STACKS_CHAIN_ID}\n        ;;\nesac\nexport V2_POX_MIN_AMOUNT_USTX=%s\nsv start postgresql stacks-blockchain || exit 1\ncd %s && exec node ./lib/index.js 2>&1' ${V2_POX_MIN_AMOUNT_USTX} ${STACKS_BLOCKCHAIN_API_DIR} > ${STACKS_SVC_DIR}/stacks-blockchain-api/run \
     && printf '#!/bin/sh\nexec svlogd -tt %s/stacks-blockchain-api' ${STACKS_LOG_DIR} > ${STACKS_SVC_DIR}/stacks-blockchain-api/log/run \
     && printf '#!/bin/sh\n/usr/bin/runsvdir %s' ${STACKS_SVC_DIR} > /entrypoint.sh \
     && chmod 755 \
-        ${STACKS_SVC_DIR}/postgresql/run \
-        ${STACKS_SVC_DIR}/postgresql/finish \
-        ${STACKS_SVC_DIR}/postgresql/log/run \
         ${STACKS_SVC_DIR}/stacks-blockchain/run \
         ${STACKS_SVC_DIR}/stacks-blockchain-api/run \
         ${STACKS_SVC_DIR}/stacks-blockchain-api/log/run \
