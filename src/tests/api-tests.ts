@@ -7244,7 +7244,7 @@ describe('api tests', () => {
       parent_microblock_hash: microblock1.microblocks[0].microblock_hash,
       parent_microblock_sequence: microblock1.microblocks[0].microblock_sequence,
       // Ensure micro-orphaned tx `0x1002` is not included
-      txs: ['0x1001', '0x0002'],
+      txs: ['0x0002', '0x1001'],
     };
     expect(fetch2.status).toBe(200);
     expect(fetch2.type).toBe('application/json');
@@ -9206,6 +9206,59 @@ describe('api tests', () => {
     expect(blockQuery.body.execution_cost_runtime).toBe(4);
     expect(blockQuery.body.execution_cost_write_count).toBe(3);
     expect(blockQuery.body.execution_cost_write_length).toBe(3);
+  });
+
+  test('400 response errors', async () => {
+    const tx_id = '0x8407751d1a8d11ee986aca32a6459d9cd798283a12e048ebafcd4cc7dadb29a';
+    const block_hash = '0xd10ccecfd7ac9e5f8a10de0532fac028559b31a6ff494d82147f6297fb66313';
+    const principal_addr = 'S.hello-world';
+    const odd_tx_error = {
+      error: `Hex string is an odd number of digits: ${tx_id}`,
+    };
+    const odd_block_error = {
+      error: `Hex string is an odd number of digits: ${block_hash}`,
+    };
+    const metadata_error = { error: `Unexpected value for 'include_metadata' parameter: "bac"` };
+    const principal_error = { error: 'invalid STX address "S.hello-world"' };
+    // extended/v1/tx
+    const searchResult1 = await supertest(api.server).get(`/extended/v1/tx/${tx_id}`);
+    expect(JSON.parse(searchResult1.text)).toEqual(odd_tx_error);
+    expect(searchResult1.status).toBe(400);
+    const searchResult2 = await supertest(api.server).get(
+      `/extended/v1/tx/multiple?tx_id=${tx_id}`
+    );
+    expect(JSON.parse(searchResult2.text)).toEqual(odd_tx_error);
+    expect(searchResult2.status).toBe(400);
+    const searchResult3 = await supertest(api.server).get(`/extended/v1/tx/${tx_id}/raw`);
+    expect(JSON.parse(searchResult3.text)).toEqual(odd_tx_error);
+    expect(searchResult3.status).toBe(400);
+    const searchResult4 = await supertest(api.server).get(`/extended/v1/tx/block/${block_hash}`);
+    expect(JSON.parse(searchResult4.text)).toEqual(odd_block_error);
+    expect(searchResult4.status).toBe(400);
+
+    // extended/v1/block
+    const searchResult5 = await supertest(api.server).get(`/extended/v1/block/${block_hash}`);
+    expect(JSON.parse(searchResult5.text)).toEqual(odd_block_error);
+    expect(searchResult5.status).toBe(400);
+
+    // extended/v1/microblock
+    const searchResult6 = await supertest(api.server).get(`/extended/v1/microblock/${block_hash}`);
+    expect(JSON.parse(searchResult6.text)).toEqual(odd_block_error);
+    expect(searchResult6.status).toBe(400);
+
+    // extended/v1/search
+    const searchResult7 = await supertest(api.server).get(
+      `/extended/v1/search/${block_hash}?include_metadata=bac`
+    );
+    expect(JSON.parse(searchResult7.text)).toEqual(metadata_error);
+    expect(searchResult6.status).toBe(400);
+
+    // extended/v1/address
+    const searchResult8 = await supertest(api.server).get(
+      `/extended/v1/address/${principal_addr}/stx`
+    );
+    expect(JSON.parse(searchResult8.text)).toEqual(principal_error);
+    expect(searchResult6.status).toBe(400);
   });
 
   test('empty abi', async () => {
